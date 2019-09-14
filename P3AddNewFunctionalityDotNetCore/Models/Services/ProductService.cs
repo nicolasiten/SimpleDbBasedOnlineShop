@@ -70,17 +70,6 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Services
             return products.Find(p => p.Id == id);
         }
 
-        public async Task<Product> GetProduct(int id)
-        {
-            var product = await _productRepository.GetProduct(id);
-            return product;
-        }
-
-        public async Task<IList<Product>> GetProduct()
-        {
-            var products = await _productRepository.GetProduct();
-            return products;
-        }
         public void UpdateProductQuantities()
         {
             Cart cart = (Cart) _cart;
