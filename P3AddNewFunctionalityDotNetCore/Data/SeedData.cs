@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 
@@ -7,10 +8,9 @@ namespace P3AddNewFunctionalityDotNetCore.Data
 {
     public class SeedData
     {
-        public static void Initialize(IServiceProvider serviceProvider)
+        public static void Initialize(DbContextOptions<P3Referential> contextOptions)
         {
-            using (var context = new P3Referential(
-                serviceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.DbContextOptions<P3Referential>>()))
+            using (var context = new P3Referential(contextOptions))
             {
                 if (context.Product.Any())
                 {
