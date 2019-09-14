@@ -25,7 +25,7 @@ namespace P3AddNewFunctionalityDotNetCore
                     context.Database.Migrate();
                     var identityContext = services.GetRequiredService<AppIdentityDbContext>();
                     identityContext.Database.Migrate();
-                    SeedData.Initialize(services);
+                    SeedData.Initialize(services.GetRequiredService<Microsoft.EntityFrameworkCore.DbContextOptions<P3Referential>>());
                 }
                 catch (Exception ex)
                 {
