@@ -75,7 +75,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void GetProductViewModelByIdTest()
         {
-            var products = _productService.GetAllProducts();
             var product = _productService.GetProductByIdViewModel(1);
 
             Assert.Equal("Echo Dot", product.Name);

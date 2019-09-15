@@ -11,6 +11,5 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
         void SaveProduct(Product product);
         void DeleteProduct(int id);
         Task<Product> GetProduct(int id);
-        Task<IList<Product>> GetProduct();
     }
 }

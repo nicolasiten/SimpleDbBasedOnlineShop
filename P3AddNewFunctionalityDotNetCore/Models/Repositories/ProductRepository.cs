@@ -13,19 +13,15 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 
         public ProductRepository(P3Referential context)
         {
-                _context = context;
+            _context = context;
         }
+
         public async Task<Product> GetProduct(int id)
         {
             var product = await _context.Product.SingleOrDefaultAsync(m => m.Id == id);
             return product;
         }
 
-        public async Task<IList<Product>> GetProduct()
-        {
-            var products = await _context.Product.ToListAsync();
-            return products;
-        }
         /// <summary>
         /// Get all products from the inventory
         /// </summary>
@@ -56,8 +52,6 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
         {
             if (product != null)
             {
-               
-
                 _context.Product.Add(product);
                 _context.SaveChanges();
             }
