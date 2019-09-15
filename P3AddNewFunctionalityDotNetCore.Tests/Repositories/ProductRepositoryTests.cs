@@ -28,7 +28,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         }
 
         [Theory]
-        [InlineData(1, false, "Echo Dot", "(2nd Generation) - Black", 10, 9.99)]
+        [InlineData(1, false, "Echo Dot", "(2nd Generation) - Black", 10, 92.5)]
         [InlineData(10000, true)]
         [InlineData(0, true)]
         [InlineData(-1, true)]

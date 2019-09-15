@@ -9,7 +9,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 {
     public class ProductRepository : IProductRepository
     {
-        private static P3Referential _context;
+        private readonly P3Referential _context;
 
         public ProductRepository(P3Referential context)
         {
