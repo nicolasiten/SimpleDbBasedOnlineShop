@@ -65,5 +65,43 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
 
             Assert.Equal(7, _productRepository.GetProduct(1).Result.Quantity);
         }
+
+        [Fact]
+        public void SaveProductTest()
+        {
+            var product = new Product
+            {
+                Name = "TestProduct",
+                Description = "Description",
+                Details = "Details",
+                Quantity = 2,
+                Price = 1,
+            };
+
+            _productRepository.SaveProduct(product);
+
+            var savedProduct = _productRepository.GetAllProducts().Last();
+            Assert.Equal(product.Name, savedProduct.Name);
+            Assert.Equal(product.Description, savedProduct.Description);
+            Assert.Equal(product.Details, savedProduct.Details);
+            Assert.Equal(product.Quantity, savedProduct.Quantity);
+            Assert.Equal(product.Price, savedProduct.Price);
+        }
+
+        [Fact]
+        public void RemoveNonExistingProductTest()
+        {
+            _productRepository.DeleteProduct(6);
+
+            Assert.Equal(5, _productRepository.GetAllProducts().Count());
+        }
+
+        [Fact]
+        public void RemoveProductTest()
+        {
+            _productRepository.DeleteProduct(1);
+
+            Assert.Equal(4, _productRepository.GetAllProducts().Count());
+        }
     }
 }
