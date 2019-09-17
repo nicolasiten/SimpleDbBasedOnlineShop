@@ -136,6 +136,6 @@
     <value>The value entered for the stock must be a integer</value>
   </data>
   <data name="StockNotGreaterThanZero" xml:space="preserve">
-    <value>The stock must greater than zero</value>
+    <value>The stock must be greater than zero</value>
   </data>
 </root>

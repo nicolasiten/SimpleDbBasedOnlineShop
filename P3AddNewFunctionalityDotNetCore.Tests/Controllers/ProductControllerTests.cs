@@ -65,9 +65,47 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
         }
 
         [Fact]
-        public void CreateTest()
+        public void CreateModelStateValidTest()
         {
+            _productServiceMock.Setup(p => p.CheckProductModelErrors(It.IsAny<ProductViewModel>())).Returns(new List<string>());
+            _productServiceMock.Setup(p => p.SaveProduct(It.IsAny<ProductViewModel>()));
+            var product = new ProductViewModel
+            {
+                Id = 1,
+                Description = "Description",
+                Details = "Details",
+                Name = "Name",
+                Price = "1",
+                Stock = "2"
+            };
 
+            var result = _productController.Create(product);
+
+            _productServiceMock.Verify(p => p.CheckProductModelErrors(product));
+            _productServiceMock.Verify(p => p.SaveProduct(product));
+            var redirectResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("Admin", redirectResult.ActionName);
+        }
+
+        [Fact]
+        public void CreateModelStateInValidTest()
+        {
+            _productServiceMock.Setup(p => p.CheckProductModelErrors(It.IsAny<ProductViewModel>())).Returns(new List<string> { "The price must be greater than zero" });
+            var product = new ProductViewModel
+            {
+                Id = 1,
+                Description = "Description",
+                Details = "Details",
+                Name = "Name",
+                Price = "-1",
+                Stock = "2"
+            };
+
+            var result = _productController.Create(product);
+
+            _productServiceMock.Verify(p => p.CheckProductModelErrors(product));
+            var viewResult = Assert.IsAssignableFrom<ViewResult>(result);
+            var model = Assert.IsAssignableFrom<ProductViewModel>(viewResult.ViewData.Model);
         }
 
         [Fact]

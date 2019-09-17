@@ -21,6 +21,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         private readonly ICart _cart;
         private readonly Mock<IStringLocalizer<ProductService>> _localizerMock;
 
+        private const string _missingName = "Please enter a name";
+        private const string _missingPrice = "Please enter a price value";
+        private const string _priceNotANumber = "The value entered for the price must be a number";
+        private const string _priceNotGreaterThanZero = "The price must be greater than zero";
+        private const string _missingStock = "Please enter a stock value";
+        private const string _stockNotAnInteger = "The value entered for the stock must be a integer";
+        private const string _stockNotGreaterThanZero = "The stock must be greater than zero";
+
         public ProductServiceTests()
         {
             var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
@@ -34,13 +42,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             _cart = new Cart();
 
             _localizerMock = new Mock<IStringLocalizer<ProductService>>();
-            _localizerMock.Setup(l => l["MissingName"]).Returns(new LocalizedString("MissingName", "Please enter a name"));
-            _localizerMock.Setup(l => l["MissingPrice"]).Returns(new LocalizedString("MissingPrice", "Please enter a price value"));
-            _localizerMock.Setup(l => l["PriceNotANumber"]).Returns(new LocalizedString("PriceNotANumber", "The value entered for the price must be a number"));
-            _localizerMock.Setup(l => l["PriceNotGreaterThanZero"]).Returns(new LocalizedString("PriceNotGreaterThanZero", "The price must be greater than zero"));
-            _localizerMock.Setup(l => l["MissingStock"]).Returns(new LocalizedString("MissingStock", "Please enter a stock value"));
-            _localizerMock.Setup(l => l["StockNotAnInteger"]).Returns(new LocalizedString("StockNotAnInteger", "The value entered for the stock must be a integer"));
-            _localizerMock.Setup(l => l["StockNotGreaterThanZero"]).Returns(new LocalizedString("StockNotGreaterThanZero", "The stock must greater than zero"));
+            _localizerMock.Setup(l => l["MissingName"]).Returns(new LocalizedString("MissingName", _missingName));
+            _localizerMock.Setup(l => l["MissingPrice"]).Returns(new LocalizedString("MissingPrice", _missingPrice));
+            _localizerMock.Setup(l => l["PriceNotANumber"]).Returns(new LocalizedString("PriceNotANumber", _priceNotANumber));
+            _localizerMock.Setup(l => l["PriceNotGreaterThanZero"]).Returns(new LocalizedString("PriceNotGreaterThanZero", _priceNotGreaterThanZero));
+            _localizerMock.Setup(l => l["MissingStock"]).Returns(new LocalizedString("MissingStock", _missingStock));
+            _localizerMock.Setup(l => l["StockNotAnInteger"]).Returns(new LocalizedString("StockNotAnInteger", _stockNotAnInteger));
+            _localizerMock.Setup(l => l["StockNotGreaterThanZero"]).Returns(new LocalizedString("StockNotGreaterThanZero", _stockNotGreaterThanZero));
 
             _productService = new ProductService(_cart, new ProductRepository(p3Referential), new OrderRepository(p3Referential), _localizerMock.Object);
             SeedData.Initialize(p3ReferentialOptions);
@@ -105,13 +113,13 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         }
 
         [Theory]
-        [InlineData("name", "1", "1", 0)]
-        [InlineData("", "1", "1", 1)] // MissingName
-        [InlineData("name", "", "1", 2)] // PriceNotANumber, MissingPrice
-        [InlineData("name", "-1", "1", 1)] // PriceNotGreateThanZero
-        [InlineData("name", "1", "", 2)] // MissingStock, StockNotAnInteger
-        [InlineData("name", "1", "-1", 1)] // StockNotGreaterThanZero
-        public void CheckProductModelErrorsTest(string name, string price, string stock, int expectedNumberOfErros)
+        [InlineData("name", "1", "1")]
+        [InlineData("", "1", "1", _missingName)] 
+        [InlineData("name", "", "1", _missingPrice, _priceNotANumber)] 
+        [InlineData("name", "-1", "1", _priceNotGreaterThanZero)] 
+        [InlineData("name", "1", "", _missingStock, _stockNotAnInteger)] 
+        [InlineData("name", "1", "-1", _stockNotGreaterThanZero)] 
+        public void CheckProductModelErrorsTest(string name, string price, string stock, params string[] messages)
         {
             var product = new ProductViewModel
             {
@@ -122,7 +130,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 
             List<string> errors = _productService.CheckProductModelErrors(product);
 
-            Assert.Equal(expectedNumberOfErros, errors.Count());
+            Assert.Equal(string.Join(",", messages), string.Join(",", errors));
         }
 
         [Fact]
