@@ -95,7 +95,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         }
 
         [Fact]
-        public async void GetOrder()
+        public async void GetOrderTest()
         {
             var order = await _orderRepository.GetOrder(1);
 
@@ -110,7 +110,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         }
 
         [Fact]
-        public async void GetNonExistingOrder()
+        public async void GetNonExistingOrderTest()
         {
             var order = await _orderRepository.GetOrder(9);
 
