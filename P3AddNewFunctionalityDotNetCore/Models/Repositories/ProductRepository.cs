@@ -36,16 +36,20 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
         /// </summary>
         public void UpdateProductStocks(int id, int quantityToRemove)
         {
-            Product product = _context.Product.First(p => p.Id == id);
-            product.Quantity = product.Quantity - quantityToRemove;
+            Product product = _context.Product.FirstOrDefault(p => p.Id == id);
 
-            if (product.Quantity == 0)
-                _context.Product.Remove(product);
-            else
+            if (product != null)
             {
-                _context.Product.Update(product);
-                _context.SaveChanges();
-            }   
+                product.Quantity = product.Quantity - quantityToRemove;
+
+                if (product.Quantity == 0)
+                    _context.Product.Remove(product);
+                else
+                {
+                    _context.Product.Update(product);
+                    _context.SaveChanges();
+                }
+            }
         }
 
         public void SaveProduct(Product product)

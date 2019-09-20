@@ -17,6 +17,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
 
         public OrderRepositoryTests()
         {
+            // TODO Test against real database --> read operations
             var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
             var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -25,20 +26,20 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
 
             _orderRepository = new OrderRepository(new P3Referential(p3ReferentialOptions));
 
-            // seed data
-            SeedData.Initialize(p3ReferentialOptions);
-            using (var context = new P3Referential(p3ReferentialOptions))
+            SeedData.Initialize(p3ReferentialOptions);           
+        }
+
+        private void OrderSeedData()
+        {
+            var order = new Order
             {
-                context.Order.AddRange(
-                    new Order
-                    {
-                        Name = "John Doe",
-                        Address = "Address",
-                        City = "City",
-                        Country = "Country",
-                        Zip = "Zip",
-                        Date = new DateTime(2019, 9, 17, 21, 6, 0),
-                        OrderLine = new List<OrderLine>
+                Name = "John Doe",
+                Address = "Address",
+                City = "City",
+                Country = "Country",
+                Zip = "Zip",
+                Date = new DateTime(2019, 9, 17, 21, 6, 0),
+                OrderLine = new List<OrderLine>
                         {
                             new OrderLine
                             {
@@ -46,10 +47,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
                                 Quantity = 1
                             }
                         }
-                    });
+            };
 
-                context.SaveChanges();
-            }            
+            _orderRepository.Save(order);
         }
 
         [Fact]
@@ -86,17 +86,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
             Assert.Equal(order.OrderLine.First().Quantity, savedOrder.OrderLine.First().Quantity);
         }
 
+        // TODO Test where ProductId doesn't exist 
+        // TODO where Product Stock is zero
+
         [Fact]
         public async void SaveNullTest()
         {
             _orderRepository.Save(null);
 
-            Assert.Equal(1, (await _orderRepository.GetOrders()).Count);
+            Assert.Equal(0, (await _orderRepository.GetOrders()).Count);
         }
 
         [Fact]
         public async void GetOrderTest()
         {
+            OrderSeedData();
+
             var order = await _orderRepository.GetOrder(1);
 
             Assert.Equal("John Doe", order.Name);
@@ -120,10 +125,19 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         [Fact]
         public async void GetOrdersTest()
         {
+            OrderSeedData();
+
             var orders = await _orderRepository.GetOrders();
 
             Assert.Single(orders);
             Assert.Single(orders.First().OrderLine);
+        }
+
+        // TODO GetOrderEmptyTest
+        [Fact]
+        public async void GetEmptyOrderTest()
+        { 
+            Assert.Empty(await _orderRepository.GetOrders());
         }
     }
 }

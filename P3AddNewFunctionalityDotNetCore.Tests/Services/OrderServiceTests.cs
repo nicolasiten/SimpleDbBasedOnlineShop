@@ -22,6 +22,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 
         public OrderServiceTests()
         {
+            // Read tests against real database + add 2 Mock Tests
             var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
             var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -30,40 +31,44 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 
             IOrderRepository orderRepository = new OrderRepository(new P3Referential(p3ReferentialOptions));
 
-            // seed data
-            SeedData.Initialize(p3ReferentialOptions);
-            using (var context = new P3Referential(p3ReferentialOptions))
-            {
-                context.Order.AddRange(
-                    new Order
-                    {
-                        Name = "John Doe",
-                        Address = "Address",
-                        City = "City",
-                        Country = "Country",
-                        Zip = "Zip",
-                        Date = new DateTime(2019, 9, 17, 21, 6, 0),
-                        OrderLine = new List<OrderLine>
-                        {
-                            new OrderLine
-                            {
-                                ProductId = 1,
-                                Quantity = 1
-                            }
-                        }
-                    });
-
-                context.SaveChanges();
-            }
+            SeedData.Initialize(p3ReferentialOptions);           
 
             _orderService = new OrderService(new Cart(), 
                 orderRepository,
                 new Mock<IProductService>().Object);
         }
 
+        private void OrderSeedData()
+        {
+            var order = new OrderViewModel
+            {
+                Name = "John Doe",
+                Address = "Address",
+                City = "City",
+                Country = "Country",
+                Zip = "Zip",
+                Date = new DateTime(2019, 9, 17, 21, 6, 0),
+                Lines = new List<CartLine>
+                        {
+                            new CartLine
+                            {
+                                Product = new Product
+                                {
+                                    Id = 1
+                                },
+                                Quantity = 1
+                            }
+                        }
+            };
+
+            _orderService.SaveOrder(order);
+        }
+
         [Fact]
         public async void GetOrderTest()
         {
+            OrderSeedData();
+
             var order = await _orderService.GetOrder(1);
 
             Assert.Equal("John Doe", order.Name);
@@ -84,9 +89,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             Assert.Null(order);
         }
 
+        // TODO Test where ProductId doesn't exist 
+        // TODO where Product Stock is zero
+
         [Fact]
         public async void SaveOrderTest()
         {
+            OrderSeedData();
+
             var order = new OrderViewModel
             {
                 Name = "Name",
@@ -117,6 +127,24 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             Assert.Equal(order.Country, savedOrder.Country);
             Assert.Equal(order.Date, new DateTime(2019, 9, 18, 20, 41, 0));
             Assert.Equal(order.Lines.First().Product.Id, savedOrder.OrderLine.First().ProductId);
+        }
+
+        [Fact]
+        public async void GetOrdersTest()
+        {
+            OrderSeedData();
+
+            var orders = await _orderService.GetOrders();
+
+            Assert.Single(orders);
+        }
+
+        [Fact]
+        public async void GetOrdersEmptyTest()
+        {
+            var orders = await _orderService.GetOrders();
+
+            Assert.Empty(orders);
         }
     }
 }

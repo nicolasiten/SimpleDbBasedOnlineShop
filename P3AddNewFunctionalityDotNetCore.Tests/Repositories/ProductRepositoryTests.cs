@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using P3AddNewFunctionalityDotNetCore.Data;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
@@ -14,9 +15,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
     public class ProductRepositoryTests
     {
         private readonly IProductRepository _productRepository;
+        private readonly IProductRepository _productRepositoryRead;
 
         public ProductRepositoryTests()
         {
+            var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            var p3ReferentialOptionsProd = new DbContextOptionsBuilder<P3Referential>().UseSqlServer(config.GetConnectionString("P3Referential")).Options;
+            _productRepositoryRead = new ProductRepository(new P3Referential(p3ReferentialOptionsProd));
+
             var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
             var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -59,11 +65,28 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         }
 
         [Fact]
+        public void GetAllProductsEmptyTest()
+        {
+            foreach (var product in _productRepository.GetAllProducts())
+            {
+                _productRepository.DeleteProduct(product.Id);
+            }
+
+            Assert.Empty(_productRepository.GetAllProducts());
+        }
+
+        [Fact]
         public void UpdateProductStocksTest()
         {
             _productRepository.UpdateProductStocks(1, 3);
 
             Assert.Equal(7, _productRepository.GetProduct(1).Result.Quantity);
+        }
+
+        [Fact]
+        public void UpdateNonExistingProductStocksTest()
+        {
+            _productRepository.UpdateProductStocks(1111, 3);
         }
 
         [Fact]

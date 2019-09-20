@@ -18,6 +18,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
 
         public ProductControllerTests()
         {
+            // reading real database + writing in memory tests
             _productServiceMock = new Mock<IProductService>();
             _productServiceMock.Setup(p => p.GetAllProductsViewModel()).Returns(new List<ProductViewModel>
             {

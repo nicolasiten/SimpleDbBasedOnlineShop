@@ -20,6 +20,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
 
         public CartControllerTests()
         {
+            // Todo tests against real database + inmemory
             _productServiceMock = new Mock<IProductService>();
             _cartMock = new Mock<ICart>();
             _cartController = new CartController(_cartMock.Object, _productServiceMock.Object);
