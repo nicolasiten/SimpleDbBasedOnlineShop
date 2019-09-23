@@ -15,9 +15,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 {
-    public class ProductServiceTests
+    public class ProductServiceTests : DbContextTestBase
     {
-        private readonly IProductService _productService;
+        private readonly IProductService _productServiceInMemoryDb;
+        private readonly IProductService _productServiceRealDb;
         private readonly ICart _cart;
         private readonly Mock<IStringLocalizer<ProductService>> _localizerMock;
 
@@ -31,16 +32,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 
         public ProductServiceTests()
         {
-            var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
-            var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .UseInternalServiceProvider(serviceProvider)
-                .Options;
-
-            P3Referential p3Referential = new P3Referential(p3ReferentialOptions);
-
-            _cart = new Cart();
-
             _localizerMock = new Mock<IStringLocalizer<ProductService>>();
             _localizerMock.Setup(l => l["MissingName"]).Returns(new LocalizedString("MissingName", _missingName));
             _localizerMock.Setup(l => l["MissingPrice"]).Returns(new LocalizedString("MissingPrice", _missingPrice));
@@ -50,14 +41,26 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             _localizerMock.Setup(l => l["StockNotAnInteger"]).Returns(new LocalizedString("StockNotAnInteger", _stockNotAnInteger));
             _localizerMock.Setup(l => l["StockNotGreaterThanZero"]).Returns(new LocalizedString("StockNotGreaterThanZero", _stockNotGreaterThanZero));
 
-            _productService = new ProductService(_cart, new ProductRepository(p3Referential), new OrderRepository(p3Referential), _localizerMock.Object);
-            SeedData.Initialize(p3ReferentialOptions);
+            _cart = new Cart();
+
+            _productServiceInMemoryDb = new ProductService(
+                _cart, 
+                new ProductRepository(new P3Referential(DbContextOptionsInMemory)), 
+                new OrderRepository(new P3Referential(DbContextOptionsInMemory)), 
+                _localizerMock.Object);
+            SeedData.Initialize(DbContextOptionsInMemory);
+
+            _productServiceRealDb = new ProductService(
+                _cart,
+                new ProductRepository(new P3Referential(DbContextOptionsRealDb)),
+                new OrderRepository(new P3Referential(DbContextOptionsRealDb)),
+                _localizerMock.Object);
         }
 
         [Fact]
         public void GetAllProductsViewModelTest()
         {
-            var products = _productService.GetAllProductsViewModel();
+            var products = _productServiceRealDb.GetAllProductsViewModel();
 
             Assert.IsType<List<ProductViewModel>>(products);
             Assert.Equal(5, products.Count);
@@ -66,7 +69,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void GetAllProductsTest()
         {
-            var products = _productService.GetAllProducts();
+            var products = _productServiceRealDb.GetAllProducts();
 
             Assert.IsType<List<Product>>(products);
             Assert.Equal(5, products.Count);
@@ -75,7 +78,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void GetProductViewModelByInvalidIdTest()
         {
-            var product = _productService.GetProductByIdViewModel(-1);
+            var product = _productServiceRealDb.GetProductByIdViewModel(-1);
 
             Assert.Null(product);
         }
@@ -83,7 +86,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void GetProductViewModelByIdTest()
         {
-            var product = _productService.GetProductByIdViewModel(1);
+            var product = _productServiceRealDb.GetProductByIdViewModel(1);
 
             Assert.Equal("Echo Dot", product.Name);
             Assert.Equal("(2nd Generation) - Black", product.Description);
@@ -94,7 +97,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void GetProductByIdTest()
         {
-            var product = _productService.GetProductById(2);
+            var product = _productServiceRealDb.GetProductById(2);
 
             Assert.Equal("Anker 3ft / 0.9m Nylon Braided", product.Name);
             Assert.Equal("Tangle-Free Micro USB Cable", product.Description);
@@ -105,11 +108,11 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void UpdateProductQuantitesTest()
         {
-            _cart.AddItem(_productService.GetProductById(1), 1);
+            _cart.AddItem(_productServiceInMemoryDb.GetProductById(1), 1);
 
-            _productService.UpdateProductQuantities();
+            _productServiceInMemoryDb.UpdateProductQuantities();
 
-            Assert.Equal(9, _productService.GetProductById(1).Quantity);
+            Assert.Equal(9, _productServiceInMemoryDb.GetProductById(1).Quantity);
         }
 
         [Theory]
@@ -128,7 +131,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
                 Stock = stock
             };
 
-            List<string> errors = _productService.CheckProductModelErrors(product);
+            List<string> errors = _productServiceInMemoryDb.CheckProductModelErrors(product);
 
             Assert.Equal(string.Join(",", messages), string.Join(",", errors));
         }
@@ -138,7 +141,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         {
             var emptyProduct = new ProductViewModel();
 
-            Assert.Throws<ArgumentNullException>(() => _productService.SaveProduct(emptyProduct));
+            Assert.Throws<ArgumentNullException>(() => _productServiceInMemoryDb.SaveProduct(emptyProduct));
         }
 
         [Fact]
@@ -153,9 +156,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
                 Stock = "3"
             };
 
-            _productService.SaveProduct(product);
+            _productServiceInMemoryDb.SaveProduct(product);
 
-            var lastProduct = _productService.GetAllProducts().Last();
+            var lastProduct = _productServiceInMemoryDb.GetAllProducts().Last();
 
             Assert.Equal(product.Name, lastProduct.Name);
             Assert.Equal(product.Description, lastProduct.Description);
@@ -167,9 +170,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public void RemoveProductTest()
         {
-            _productService.DeleteProduct(1);
+            _productServiceInMemoryDb.DeleteProduct(1);
 
-            Assert.Equal(4, _productService.GetAllProducts().Count);
+            Assert.Equal(4, _productServiceInMemoryDb.GetAllProducts().Count);
         }
     }
 }

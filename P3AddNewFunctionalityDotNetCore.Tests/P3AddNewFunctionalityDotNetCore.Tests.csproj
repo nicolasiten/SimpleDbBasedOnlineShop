@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestDatabase.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="..\P3AddNewFunctionalityDotNetCore\appsettings.json" Link="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -24,6 +28,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\P3AddNewFunctionalityDotNetCore\P3AddNewFunctionalityDotNetCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -11,45 +11,17 @@ using System.Linq;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
 {
-    public class OrderRepositoryTests
+    public class OrderRepositoryTests : DbContextTestBase
     {
-        private readonly IOrderRepository _orderRepository;
+        private readonly IOrderRepository _orderRepositoryInMemoryDb;
+        private readonly IOrderRepository _orderRepositoryRealDb;
 
         public OrderRepositoryTests()
         {
-            // TODO Test against real database --> read operations
-            var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
-            var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .UseInternalServiceProvider(serviceProvider)
-                .Options;
+            _orderRepositoryRealDb = new OrderRepository(DbContextRealDb);
 
-            _orderRepository = new OrderRepository(new P3Referential(p3ReferentialOptions));
-
-            SeedData.Initialize(p3ReferentialOptions);           
-        }
-
-        private void OrderSeedData()
-        {
-            var order = new Order
-            {
-                Name = "John Doe",
-                Address = "Address",
-                City = "City",
-                Country = "Country",
-                Zip = "Zip",
-                Date = new DateTime(2019, 9, 17, 21, 6, 0),
-                OrderLine = new List<OrderLine>
-                        {
-                            new OrderLine
-                            {
-                                ProductId = 1,
-                                Quantity = 1
-                            }
-                        }
-            };
-
-            _orderRepository.Save(order);
+            _orderRepositoryInMemoryDb = new OrderRepository(DbContextInMemoryDb);
+            SeedData.Initialize(DbContextOptionsInMemory);           
         }
 
         [Fact]
@@ -73,9 +45,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
                 }
             };
 
-            _orderRepository.Save(order);
+            _orderRepositoryInMemoryDb.Save(order);
 
-            var savedOrder = (await _orderRepository.GetOrders()).Last();
+            var savedOrder = (await _orderRepositoryInMemoryDb.GetOrders()).Last();
             Assert.Equal(order.Name, savedOrder.Name);
             Assert.Equal(order.Address, savedOrder.Address);
             Assert.Equal(order.City, savedOrder.City);
@@ -92,17 +64,15 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         [Fact]
         public async void SaveNullTest()
         {
-            _orderRepository.Save(null);
+            _orderRepositoryInMemoryDb.Save(null);
 
-            Assert.Equal(0, (await _orderRepository.GetOrders()).Count);
+            Assert.Equal(0, (await _orderRepositoryInMemoryDb.GetOrders()).Count);
         }
 
         [Fact]
         public async void GetOrderTest()
         {
-            OrderSeedData();
-
-            var order = await _orderRepository.GetOrder(1);
+            var order = await _orderRepositoryRealDb.GetOrder(1);
 
             Assert.Equal("John Doe", order.Name);
             Assert.Equal("Address", order.Address);
@@ -117,7 +87,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         [Fact]
         public async void GetNonExistingOrderTest()
         {
-            var order = await _orderRepository.GetOrder(9);
+            var order = await _orderRepositoryInMemoryDb.GetOrder(9);
 
             Assert.Null(order);
         }
@@ -125,19 +95,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         [Fact]
         public async void GetOrdersTest()
         {
-            OrderSeedData();
-
-            var orders = await _orderRepository.GetOrders();
+            var orders = await _orderRepositoryRealDb.GetOrders();
 
             Assert.Single(orders);
             Assert.Single(orders.First().OrderLine);
         }
 
-        // TODO GetOrderEmptyTest
         [Fact]
         public async void GetEmptyOrderTest()
         { 
-            Assert.Empty(await _orderRepository.GetOrders());
+            Assert.Empty(await _orderRepositoryInMemoryDb.GetOrders());
         }
     }
 }

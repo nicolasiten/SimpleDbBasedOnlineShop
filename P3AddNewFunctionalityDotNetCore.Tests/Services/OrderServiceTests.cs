@@ -16,60 +16,27 @@ using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 {
-    public class OrderServiceTests
+    public class OrderServiceTests : DbContextTestBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IOrderService _orderServiceInMemoryDb;
+        private readonly IOrderService _orderServiceRealDb;
 
         public OrderServiceTests()
         {
-            // Read tests against real database + add 2 Mock Tests
-            var serviceProvider = new ServiceCollection().AddEntityFrameworkInMemoryDatabase().BuildServiceProvider();
-            var p3ReferentialOptions = new DbContextOptionsBuilder<P3Referential>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .UseInternalServiceProvider(serviceProvider)
-                .Options;
-
-            IOrderRepository orderRepository = new OrderRepository(new P3Referential(p3ReferentialOptions));
-
-            SeedData.Initialize(p3ReferentialOptions);           
-
-            _orderService = new OrderService(new Cart(), 
-                orderRepository,
+            _orderServiceRealDb = new OrderService(new Cart(),
+                new OrderRepository(new P3Referential(DbContextOptionsRealDb)),
                 new Mock<IProductService>().Object);
-        }
 
-        private void OrderSeedData()
-        {
-            var order = new OrderViewModel
-            {
-                Name = "John Doe",
-                Address = "Address",
-                City = "City",
-                Country = "Country",
-                Zip = "Zip",
-                Date = new DateTime(2019, 9, 17, 21, 6, 0),
-                Lines = new List<CartLine>
-                        {
-                            new CartLine
-                            {
-                                Product = new Product
-                                {
-                                    Id = 1
-                                },
-                                Quantity = 1
-                            }
-                        }
-            };
-
-            _orderService.SaveOrder(order);
+            _orderServiceInMemoryDb = new OrderService(new Cart(),
+                new OrderRepository(new P3Referential(DbContextOptionsInMemory)),
+                new Mock<IProductService>().Object);
+            SeedData.Initialize(DbContextOptionsInMemory);
         }
 
         [Fact]
         public async void GetOrderTest()
         {
-            OrderSeedData();
-
-            var order = await _orderService.GetOrder(1);
+            var order = await _orderServiceRealDb.GetOrder(1);
 
             Assert.Equal("John Doe", order.Name);
             Assert.Equal("Address", order.Address);
@@ -84,7 +51,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public async void GetNonExistingOrderTest()
         {
-            var order = await _orderService.GetOrder(9);
+            var order = await _orderServiceRealDb.GetOrder(9);
 
             Assert.Null(order);
         }
@@ -95,8 +62,6 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public async void SaveOrderTest()
         {
-            OrderSeedData();
-
             var order = new OrderViewModel
             {
                 Name = "Name",
@@ -117,10 +82,10 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
                 }
             };
 
-            _orderService.SaveOrder(order);
+            _orderServiceInMemoryDb.SaveOrder(order);
 
-            Assert.Equal(2, (await _orderService.GetOrders()).Count);
-            var savedOrder = (await _orderService.GetOrders()).Last();
+            Assert.Single(await _orderServiceInMemoryDb.GetOrders());
+            var savedOrder = (await _orderServiceInMemoryDb.GetOrders()).Last();
             Assert.Equal(order.Name, savedOrder.Name);
             Assert.Equal(order.Address, savedOrder.Address);
             Assert.Equal(order.City, savedOrder.City);
@@ -132,9 +97,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public async void GetOrdersTest()
         {
-            OrderSeedData();
-
-            var orders = await _orderService.GetOrders();
+            var orders = await _orderServiceRealDb.GetOrders();
 
             Assert.Single(orders);
         }
@@ -142,7 +105,7 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
         [Fact]
         public async void GetOrdersEmptyTest()
         {
-            var orders = await _orderService.GetOrders();
+            var orders = await _orderServiceInMemoryDb.GetOrders();
 
             Assert.Empty(orders);
         }
