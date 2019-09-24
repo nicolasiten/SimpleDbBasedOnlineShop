@@ -75,9 +75,9 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
                     {
                         Product = new Product
                         {
-                            Id = 1,
-                            Quantity = 1
-                        }
+                            Id = 1
+                        },
+                        Quantity = 1
                     }
                 }
             };

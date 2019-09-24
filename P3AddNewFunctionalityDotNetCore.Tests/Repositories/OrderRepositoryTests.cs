@@ -58,15 +58,90 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
             Assert.Equal(order.OrderLine.First().Quantity, savedOrder.OrderLine.First().Quantity);
         }
 
-        // TODO Test where ProductId doesn't exist 
-        // TODO where Product Stock is zero
+        [Fact]
+        public async void SaveNonExistingProductIdTest()
+        {
+            var order = new Order
+            {
+                Name = "Peter Doe",
+                Address = "Address",
+                City = "City",
+                Country = "Country",
+                Zip = "Zip",
+                Date = new DateTime(2019, 9, 17, 21, 6, 0),
+                OrderLine = new List<OrderLine>
+                {
+                    new OrderLine
+                    {
+                        ProductId = 10000,
+                        Quantity = 2
+                    }
+                }
+            };
+
+            _orderRepositoryInMemoryDb.Save(order);
+
+            Assert.Empty(await _orderRepositoryInMemoryDb.GetOrders());
+        }
+
+        [Fact]
+        public async void SaveQuantityToBigTest()
+        {
+            var order = new Order
+            {
+                Name = "Peter Doe",
+                Address = "Address",
+                City = "City",
+                Country = "Country",
+                Zip = "Zip",
+                Date = new DateTime(2019, 9, 17, 21, 6, 0),
+                OrderLine = new List<OrderLine>
+                {
+                    new OrderLine
+                    {
+                        ProductId = 1,
+                        Quantity = 1000000
+                    }
+                }
+            };
+
+            _orderRepositoryInMemoryDb.Save(order);
+
+            Assert.Empty(await _orderRepositoryInMemoryDb.GetOrders());
+        }
+
+        [Fact]
+        public async void SaveQuantityZeroTest()
+        {
+            var order = new Order
+            {
+                Name = "Peter Doe",
+                Address = "Address",
+                City = "City",
+                Country = "Country",
+                Zip = "Zip",
+                Date = new DateTime(2019, 9, 17, 21, 6, 0),
+                OrderLine = new List<OrderLine>
+                {
+                    new OrderLine
+                    {
+                        ProductId = 1,
+                        Quantity = 0
+                    }
+                }
+            };
+
+            _orderRepositoryInMemoryDb.Save(order);
+
+            Assert.Empty(await _orderRepositoryInMemoryDb.GetOrders());
+        }
 
         [Fact]
         public async void SaveNullTest()
         {
             _orderRepositoryInMemoryDb.Save(null);
 
-            Assert.Equal(0, (await _orderRepositoryInMemoryDb.GetOrders()).Count);
+            Assert.Empty(await _orderRepositoryInMemoryDb.GetOrders());
         }
 
         [Fact]

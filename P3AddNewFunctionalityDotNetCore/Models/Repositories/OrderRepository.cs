@@ -2,6 +2,7 @@
 using P3AddNewFunctionalityDotNetCore.Data;
 using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
@@ -17,7 +18,7 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 
         public void Save(Order order)
         {
-            if (order != null)
+            if (order != null && OrderValid(order))
             {
                 _context.Order.Add(order);
                 _context.SaveChanges();
@@ -36,6 +37,22 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
             var orders = await _context.Order.Include(x => x.OrderLine)
                 .ThenInclude(product => product.Product).ToListAsync();
             return orders;
+        }
+
+        private bool OrderValid(Order order)
+        {
+            foreach (OrderLine line in order.OrderLine)
+            {
+                if (line.ProductId < 1 || 
+                    !_context.Product.Any(p => p.Id == line.ProductId) || 
+                    _context.Product.First(p => p.Id == line.ProductId).Quantity < line.Quantity ||
+                    line.Quantity < 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }
