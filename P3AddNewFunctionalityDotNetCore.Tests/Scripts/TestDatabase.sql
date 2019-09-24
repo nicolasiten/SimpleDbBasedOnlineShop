@@ -2,11 +2,6 @@ USE [master]
 GO
 /****** Object:  Database [P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a]    Script Date: 23.09.2019 12:03:17 ******/
 CREATE DATABASE [P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a]
- CONTAINMENT = NONE
- ON  PRIMARY 
-( NAME = N'P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a', FILENAME = N'C:\Users\nicolas.iten\P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON 
-( NAME = N'P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a_log', FILENAME = N'C:\Users\nicolas.iten\P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
 GO
 ALTER DATABASE [P3Referential-Test-2f561d3b-493f-46fd-83c9-6e2643e7bd0a] SET COMPATIBILITY_LEVEL = 130
 GO
