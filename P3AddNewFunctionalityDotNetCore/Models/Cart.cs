@@ -1,4 +1,5 @@
-﻿using P3AddNewFunctionalityDotNetCore.Models.Entities;
+﻿using System;
+using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,12 +32,27 @@ namespace P3AddNewFunctionalityDotNetCore.Models
 
         public double GetTotalValue()
         {
-            return _cartLines.Any() ? _cartLines.Sum(l => l.Product.Price) : 0;
+            double totalValue = 0;
+            foreach (CartLine item in _cartLines)
+            {
+                totalValue += item.Product.Price * item.Quantity;
+            }
+
+            return totalValue;
         }
 
+        /// <summary>
+        /// Get average value of a cart
+        /// </summary>
         public double GetAverageValue()
         {
-            return _cartLines.Any() ? _cartLines.Average(l => l.Product.Price) : 0;
+            int numberOfProducts = 0;
+            foreach (CartLine item in _cartLines)
+            {
+                numberOfProducts += item.Quantity;
+            }
+
+            return numberOfProducts > 0 ? GetTotalValue() / numberOfProducts : 0;
         }
 
         public void Clear() => _cartLines.Clear();
