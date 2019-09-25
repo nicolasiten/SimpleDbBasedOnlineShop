@@ -7,72 +7,65 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Localization;
+using P3AddNewFunctionalityDotNetCore.Data;
+using P3AddNewFunctionalityDotNetCore.Models;
+using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
 {
-    public class ProductControllerTests
+    public class ProductControllerTests : DbContextTestBase
     {
-        private readonly ProductController _productController;
-        private readonly Mock<IProductService> _productServiceMock;
+        private readonly ProductController _productControllerRealDb;
+        private readonly ProductController _productControllerInMemoryDb;
+        private readonly IProductService _productServiceInMemoryDb;
 
         public ProductControllerTests()
         {
-            // reading real database + writing in memory tests
-            _productServiceMock = new Mock<IProductService>();
-            _productServiceMock.Setup(p => p.GetAllProductsViewModel()).Returns(new List<ProductViewModel>
-            {
-                new ProductViewModel
-                {
-                    Id = 1,
-                    Name = "A",
-                    Description = "Description",
-                    Price = "1",
-                    Stock = "3"
-                },
-                new ProductViewModel
-                {
-                    Id = 2,
-                    Name = "B",
-                    Description = "Description",
-                    Details = "Details",
-                    Price = "2",
-                    Stock = "4"
-                }
-            });
+            Mock<IStringLocalizer<ProductService>> stringLocalizerMock = new Mock<IStringLocalizer<ProductService>>();
+            stringLocalizerMock.Setup(l => l[It.IsAny<string>()]).Returns(new LocalizedString(string.Empty, string.Empty));
 
-            _productController = new ProductController(_productServiceMock.Object, new LanguageService());
+            IProductService productServiceRealDb = new ProductService(new Cart(), 
+                new ProductRepository(new P3Referential(DbContextOptionsRealDb)), 
+                new OrderRepository(new P3Referential(DbContextOptionsRealDb)), 
+                stringLocalizerMock.Object);
+            _productControllerRealDb = new ProductController(productServiceRealDb, new LanguageService());
+
+            _productServiceInMemoryDb = new ProductService(new Cart(),
+                new ProductRepository(new P3Referential(DbContextOptionsInMemory)),
+                new OrderRepository(new P3Referential(DbContextOptionsInMemory)),
+                stringLocalizerMock.Object);
+            SeedData.Initialize(DbContextOptionsInMemory);
+            _productControllerInMemoryDb = new ProductController(_productServiceInMemoryDb, new LanguageService());
         }
 
         [Fact]
         public void IndexTest()
         {
-            var result = _productController.Index();
+            var result = _productControllerRealDb.Index();
 
             var viewResult = Assert.IsAssignableFrom<ViewResult>(result);
             var model = Assert.IsAssignableFrom<IEnumerable<ProductViewModel>>(viewResult.ViewData.Model);
-            Assert.Equal(2, model.Count());
+            Assert.Equal(5, model.Count());
         }
 
         [Fact]
         public void AdminTest()
         {
-            var result = _productController.Admin();
+            var result = _productControllerRealDb.Admin();
 
             var viewResult = Assert.IsAssignableFrom<ViewResult>(result);
             var model = Assert.IsAssignableFrom<IEnumerable<ProductViewModel>>(viewResult.ViewData.Model);
-            Assert.Equal(2, model.Count());
-            Assert.Equal("B", model.First().Name);
+            Assert.Equal(5, model.Count());
+            Assert.Equal("Echo Dot", model.First(m => m.Id == 1).Name);
         }
 
         [Fact]
         public void CreateModelStateValidTest()
         {
-            _productServiceMock.Setup(p => p.CheckProductModelErrors(It.IsAny<ProductViewModel>())).Returns(new List<string>());
-            _productServiceMock.Setup(p => p.SaveProduct(It.IsAny<ProductViewModel>()));
             var product = new ProductViewModel
             {
-                Id = 1,
                 Description = "Description",
                 Details = "Details",
                 Name = "Name",
@@ -80,18 +73,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
                 Stock = "2"
             };
 
-            var result = _productController.Create(product);
+            var result = _productControllerInMemoryDb.Create(product);
+            var savedProduct = _productServiceInMemoryDb.GetAllProductsViewModel().Last();
 
-            _productServiceMock.Verify(p => p.CheckProductModelErrors(product));
-            _productServiceMock.Verify(p => p.SaveProduct(product));
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Admin", redirectResult.ActionName);
+            Assert.Equal(product.Description, savedProduct.Description);
+            Assert.Equal(product.Details, savedProduct.Details);
+            Assert.Equal(product.Name, savedProduct.Name);
+            Assert.Equal(product.Price, savedProduct.Price);
+            Assert.Equal(product.Stock, savedProduct.Stock);
         }
 
         [Fact]
         public void CreateModelStateInValidTest()
         {
-            _productServiceMock.Setup(p => p.CheckProductModelErrors(It.IsAny<ProductViewModel>())).Returns(new List<string> { "The price must be greater than zero" });
             var product = new ProductViewModel
             {
                 Id = 1,
@@ -102,23 +98,21 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
                 Stock = "2"
             };
 
-            var result = _productController.Create(product);
+            var result = _productControllerInMemoryDb.Create(product);
 
-            _productServiceMock.Verify(p => p.CheckProductModelErrors(product));
             var viewResult = Assert.IsAssignableFrom<ViewResult>(result);
             var model = Assert.IsAssignableFrom<ProductViewModel>(viewResult.ViewData.Model);
+            Assert.Equal(5, _productServiceInMemoryDb.GetAllProducts().Count);
         }
 
         [Fact]
         public void DeleteProductTest()
         {
-            _productServiceMock.Setup(p => p.DeleteProduct(It.IsAny<int>()));
+            var result = _productControllerInMemoryDb.DeleteProduct(2);
 
-            var result = _productController.DeleteProduct(2);
-
-            _productServiceMock.Verify(p => p.DeleteProduct(2));
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Admin", redirectResult.ActionName);
+            Assert.Equal(4, _productServiceInMemoryDb.GetAllProducts().Count);
         }
     }
 }

@@ -8,115 +8,106 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Localization;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
+using P3AddNewFunctionalityDotNetCore.Data;
+using P3AddNewFunctionalityDotNetCore.Models.Repositories;
 using Xunit;
 
 namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
 {
-    public class CartControllerTests
+    public class CartControllerTests : DbContextTestBase
     {
         private readonly CartController _cartController;
-        private readonly Mock<IProductService> _productServiceMock;
-        private readonly Mock<ICart> _cartMock;
+        private readonly IProductService _productService;
+        private readonly ICart _cart;
 
         public CartControllerTests()
         {
-            // Todo tests against real database + inmemory
-            _productServiceMock = new Mock<IProductService>();
-            _cartMock = new Mock<ICart>();
-            _cartController = new CartController(_cartMock.Object, _productServiceMock.Object);
+            Mock<IStringLocalizer<ProductService>> stringLocalizerMock = new Mock<IStringLocalizer<ProductService>>();
+            _cart = new Cart();
+
+            _productService = new ProductService(new Cart(),
+                new ProductRepository(new P3Referential(DbContextOptionsRealDb)),
+                new OrderRepository(new P3Referential(DbContextOptionsRealDb)),
+                stringLocalizerMock.Object);
+            _cartController = new CartController(_cart, _productService);
         }
 
         [Fact]
         public void IndexTest()
         {
+            var product = _productService.GetProductById(1);
+            _cart.AddItem(product, 2);
             var result = _cartController.Index();
 
             var viewResult = Assert.IsAssignableFrom<ViewResult>(result);
+            var model = Assert.IsAssignableFrom<Cart>(viewResult.Model);
+            Assert.Single(model.Lines);
+            Assert.Equal(product.Id, model.Lines.First().Product.Id);
+            Assert.Equal(product.Description, model.Lines.First().Product.Description);
+            Assert.Equal(product.Details, model.Lines.First().Product.Details);
+            Assert.Equal(product.Name, model.Lines.First().Product.Name);
+            Assert.Equal(product.Price, model.Lines.First().Product.Price);
+            Assert.Equal(product.Quantity, model.Lines.First().Product.Quantity);
+            Assert.Equal(2, model.Lines.First().Quantity);
         }
 
         [Fact]
         public void AddToCartTest()
         {
-            var product = new Product
-            {
-                Id = 1,
-                Description = "Description",
-                Details = "Details",
-                Name = "Name",
-                Price = 1,
-                Quantity = 2
-            };
-            _productServiceMock.Setup(p => p.GetProductById(It.IsAny<int>())).Returns(product);
-            _cartMock.Setup(c => c.AddItem(It.IsAny<Product>(), It.IsAny<int>()));
+            var product = _productService.GetProductById(1);
 
             var result = _cartController.AddToCart(1);
 
-            _cartMock.Verify(c => c.AddItem(product, 1));
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
-            Assert.Null(redirectResult.ControllerName);
+            Assert.Single(_cart.Lines);
+            Assert.Equal(product.Id, _cart.Lines.First().Product.Id);
+            Assert.Equal(product.Description, _cart.Lines.First().Product.Description);
+            Assert.Equal(product.Details, _cart.Lines.First().Product.Details);
+            Assert.Equal(product.Name, _cart.Lines.First().Product.Name);
+            Assert.Equal(product.Price, _cart.Lines.First().Product.Price);
+            Assert.Equal(product.Quantity, _cart.Lines.First().Product.Quantity);
+            Assert.Equal(1, _cart.Lines.First().Quantity);
         }
 
         [Fact]
         public void AddToCartNonExistingTest()
         {
-            _productServiceMock.Setup(p => p.GetProductById(It.IsAny<int>())).Returns((Product)null);
-            _cartMock.Setup(c => c.AddItem(It.IsAny<Product>(), It.IsAny<int>()));
+            var result = _cartController.AddToCart(8);
 
-            var result = _cartController.AddToCart(1);
-
-            _cartMock.Verify(c => c.AddItem(It.IsAny<Product>(), 1), Times.Never);
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
             Assert.Equal("Product", redirectResult.ControllerName);
+            Assert.Empty(_cart.Lines);
         }
 
         [Fact]
         public void RemoveFromCartTest()
         {
-            var products = new List<Product>
-            {
-                new Product
-                {
-                    Id = 1
-                },
-                new Product
-                {
-                    Id = 2
-                }
-            };
-            _productServiceMock.Setup(p => p.GetAllProducts()).Returns(products);
-            _cartMock.Setup(c => c.RemoveLine(It.IsAny<Product>()));
+            _cartController.AddToCart(1);
+            _cartController.AddToCart(2);
 
-            var result = _cartController.RemoveFromCart(1);
+            var result = _cartController.RemoveFromCart(2);
 
-            _cartMock.Verify(c => c.RemoveLine(products.First()));
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
+            Assert.Single(_cart.Lines);
+            Assert.Equal(1, _cart.Lines.First().Product.Id);
         }
 
         [Fact]
         public void RemoveFromCartNonExistingTest()
         {
-            var products = new List<Product>
-            {
-                new Product
-                {
-                    Id = 1
-                },
-                new Product
-                {
-                    Id = 2
-                }
-            };
-            _productServiceMock.Setup(p => p.GetAllProducts()).Returns(products);
-            _cartMock.Setup(c => c.RemoveLine(It.IsAny<Product>()));
+            _cartController.AddToCart(1);
+            _cartController.AddToCart(2);
 
             var result = _cartController.RemoveFromCart(3);
 
-            _cartMock.Verify(c => c.RemoveLine(It.IsAny<Product>()), Times.Never);
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Index", redirectResult.ActionName);
+            Assert.Equal(2, _cart.Lines.Count());
         }
     }
 }
