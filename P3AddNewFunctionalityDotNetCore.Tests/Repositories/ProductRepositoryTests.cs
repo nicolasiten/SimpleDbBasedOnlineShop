@@ -76,6 +76,12 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Repositories
         }
 
         [Fact]
+        public void UpdateProductStocksTooBigTest()
+        {
+            Assert.Throws<ArgumentException>(() => _productRepositoryInMemoryDb.UpdateProductStocks(1, 11));
+        }
+
+        [Fact]
         public void UpdateNonExistingProductStocksTest()
         {
             _productRepositoryInMemoryDb.UpdateProductStocks(1111, 3);

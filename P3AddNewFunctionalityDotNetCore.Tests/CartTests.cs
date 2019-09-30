@@ -86,12 +86,32 @@ namespace P3AddNewFunctionalityDotNetCore.Tests
         }
 
         [Fact]
+        public void GetAverageValueOnEmptyCartTest()
+        {
+            var cart = new Cart();
+
+            double averageValue = cart.GetAverageValue();
+
+            Assert.Equal(0, averageValue);
+        }
+
+        [Fact]
         public void GetTotalValueTest()
         {
             double totalValue = _cart.GetTotalValue();
             double expectedValue = 15 * 2 + 10;
 
             Assert.Equal(expectedValue, totalValue);
+        }
+
+        [Fact]
+        public void GetTotalValueOnEmptyCartTest()
+        {
+            var cart = new Cart();
+
+            double totalValue = cart.GetTotalValue();
+
+            Assert.Equal(0, totalValue);
         }
     }
 }

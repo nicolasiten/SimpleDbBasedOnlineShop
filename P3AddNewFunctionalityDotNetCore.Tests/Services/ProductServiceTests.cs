@@ -115,6 +115,14 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             Assert.Equal(9, _productServiceInMemoryDb.GetProductById(1).Quantity);
         }
 
+        [Fact]
+        public void UpdateProductQuantitiesTooBigTest()
+        {
+            _cart.AddItem(_productServiceInMemoryDb.GetProductById(1), 11);
+
+            Assert.Throws<ArgumentException>(() => _productServiceInMemoryDb.UpdateProductQuantities());
+        }
+
         [Theory]
         [InlineData("name", "1", "1")]
         [InlineData("", "1", "1", _missingName)] 
@@ -173,6 +181,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
             _productServiceInMemoryDb.DeleteProduct(1);
 
             Assert.Equal(4, _productServiceInMemoryDb.GetAllProducts().Count);
+        }
+
+        [Fact]
+        public void RemoveProductAddedToCartTest()
+        {
+            _cart.AddItem(_productServiceInMemoryDb.GetProductById(1), 1);
+
+            _productServiceInMemoryDb.DeleteProduct(1);
+
+            Assert.Empty(_cart.Lines);
+        }
+
+        [Fact]
+        public void NotEnoughStockOnCheckoutTest()
+        {
+            
         }
     }
 }

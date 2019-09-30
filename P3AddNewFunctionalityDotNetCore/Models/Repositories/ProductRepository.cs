@@ -4,6 +4,7 @@ using P3AddNewFunctionalityDotNetCore.Models.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 {
@@ -40,6 +41,11 @@ namespace P3AddNewFunctionalityDotNetCore.Models.Repositories
 
             if (product != null)
             {
+                if (quantityToRemove > product.Quantity)
+                {
+                    throw new ArgumentException("quantityToRemove bigger than product quantity");
+                }
+
                 product.Quantity = product.Quantity - quantityToRemove;
 
                 if (product.Quantity == 0)

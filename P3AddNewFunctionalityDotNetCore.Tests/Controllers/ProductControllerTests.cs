@@ -20,19 +20,22 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
         private readonly ProductController _productControllerRealDb;
         private readonly ProductController _productControllerInMemoryDb;
         private readonly IProductService _productServiceInMemoryDb;
+        private readonly ICart _cart;
 
         public ProductControllerTests()
         {
             Mock<IStringLocalizer<ProductService>> stringLocalizerMock = new Mock<IStringLocalizer<ProductService>>();
             stringLocalizerMock.Setup(l => l[It.IsAny<string>()]).Returns(new LocalizedString(string.Empty, string.Empty));
 
-            IProductService productServiceRealDb = new ProductService(new Cart(), 
+            _cart = new Cart();
+
+            IProductService productServiceRealDb = new ProductService(_cart, 
                 new ProductRepository(new P3Referential(DbContextOptionsRealDb)), 
                 new OrderRepository(new P3Referential(DbContextOptionsRealDb)), 
                 stringLocalizerMock.Object);
             _productControllerRealDb = new ProductController(productServiceRealDb, new LanguageService());
 
-            _productServiceInMemoryDb = new ProductService(new Cart(),
+            _productServiceInMemoryDb = new ProductService(_cart,
                 new ProductRepository(new P3Referential(DbContextOptionsInMemory)),
                 new OrderRepository(new P3Referential(DbContextOptionsInMemory)),
                 stringLocalizerMock.Object);
@@ -113,6 +116,16 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Controllers
             var redirectResult = Assert.IsType<RedirectToActionResult>(result);
             Assert.Equal("Admin", redirectResult.ActionName);
             Assert.Equal(4, _productServiceInMemoryDb.GetAllProducts().Count);
+        }
+
+        [Fact]
+        public void DeleteProductAddedToCartTest()
+        {
+            _cart.AddItem(_productServiceInMemoryDb.GetProductById(1), 1);
+
+            _productControllerInMemoryDb.DeleteProduct(1);
+
+            Assert.Empty(_cart.Lines);
         }
     }
 }
