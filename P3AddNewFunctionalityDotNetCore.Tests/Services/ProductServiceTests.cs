@@ -192,11 +192,5 @@ namespace P3AddNewFunctionalityDotNetCore.Tests.Services
 
             Assert.Empty(_cart.Lines);
         }
-
-        [Fact]
-        public void NotEnoughStockOnCheckoutTest()
-        {
-            
-        }
     }
 }
